@@ -14,6 +14,8 @@ include(Doctest)
 
 set(SOURCES
   src/cpu.cpp
+  src/registers.cpp
+  src/memory.cpp
 )
 
 set(TESTFILES
@@ -21,6 +23,8 @@ set(TESTFILES
 
 set(LIBRARY_NAME riscpp)
 add_library(${LIBRARY_NAME} SHARED ${SOURCES})
+
+include_directories(riscv-tests)
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(${LIBRARY_NAME} PUBLIC doctest)
