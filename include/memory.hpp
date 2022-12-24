@@ -1,18 +1,22 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include <stdint.h>
+
+#define MEM_OFFSET 0x80000000
+
 class Memory{
 public:
     Memory(int size, int mem_offset);
 
-    void writeSegment(const char8_t* data, int datsize, int addr);
+    void writeSegment(const uint8_t* data, int datsize, int addr);
 
     int readSegment(int addr);
 
     ~Memory();
 
 private:
-    char8_t * mem;
+    uint8_t* mem;
     int mem_offset;
     int mem_size;
 };

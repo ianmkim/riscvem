@@ -5,8 +5,13 @@
 #include "utils.hpp"
 #include "memory.hpp"
 #include "registers.hpp"
+#include "cpu.hpp"
 
 int main(int argc, char** argv){
+    // 64k memory starting at 0x80000000
+    Memory mem(0x4000, 0x80000000); 
+    Regfile reg;
+
     ELFIO::elfio reader;
     if(!reader.load("../riscv-tests/isa/rv32ui-p-add")){
         std::cout << "Cannot find or process ELF file" << std::endl;
@@ -27,14 +32,19 @@ int main(int argc, char** argv){
 
         int int_addr = (int)psec->get_address();
         if(int_addr != 0x0){
-            const unsigned char* p = (unsigned char*)reader.sections[i]->get_data();
-            for (int e = 0; e < reader.sections[i]->get_size(); e+=4){
-                int inst;
-                std::memcpy(&inst, &p[e], 4);
-                std::cout << std::hex << HEX(inst) << std::endl;
-            }
-            std::cout << std::endl;
+            const uint8_t* p = (uint8_t*)reader.sections[i]->get_data();
+            mem.writeSegment(p, reader.sections[i]->get_size(), int_addr);
         }
+
+        reg.regs[PC] = MEM_OFFSET;
+        int instruction_count = 0;
+        while(step(mem, reg)){
+            std::cout << std::dec << (int)instruction_count << " instructions ran" << std::endl;
+            instruction_count++;
+        }
+
+        std::cout << "TEST SUCCEDED" << std::endl;
+        std::cout << " ran " << instruction_count << " instructions" << std::endl;
     }
 
     Regfile regfile;

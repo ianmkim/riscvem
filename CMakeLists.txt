@@ -16,6 +16,7 @@ set(SOURCES
   src/cpu.cpp
   src/registers.cpp
   src/memory.cpp
+  src/utils.cpp
 )
 
 set(TESTFILES

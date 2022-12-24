@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <cstring>
+#include <stdint.h>
 
 Memory::Memory(int size, int mem_offset=0x80000000){
     if(size <= 0)
@@ -9,16 +10,16 @@ Memory::Memory(int size, int mem_offset=0x80000000){
 
     this->mem_offset = mem_offset;
     this->mem_size = size;
-    this->mem = (char8_t*)malloc(sizeof(char8_t)*size);
+    this->mem = (uint8_t*)malloc(sizeof(uint8_t)*size);
 
     if(this->mem == nullptr)
         throw std::runtime_error("Could not allocate enough memory for given size");
 
-    std::memset(this->mem, (char8_t)0x00, size);
+    std::memset(this->mem, (uint8_t)0x00, size);
 }
 
 
-void Memory::writeSegment(const char8_t* data, int datsize, int addr){
+void Memory::writeSegment(const uint8_t* data, int datsize, int addr){
     addr -= this->mem_offset;
     if(addr < 0 || addr >= this->mem_size)
         throw std::runtime_error("Tried to access an illegal memory address");
