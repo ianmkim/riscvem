@@ -17,6 +17,8 @@ set(SOURCES
   src/registers.cpp
   src/memory.cpp
   src/utils.cpp
+  src/conditionals.cpp
+  src/arithmetics.cpp
 )
 
 set(TESTFILES
