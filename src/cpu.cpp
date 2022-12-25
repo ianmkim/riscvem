@@ -55,9 +55,18 @@ bool step(Memory &mem, Regfile &reg){
                         (get_bits(ins, 21, 20) << 11) |
                         (get_bits(ins, 19, 12) << 12), 21);
 
+    int32_t rd = get_bits(ins, 11, 7);
+
+    int32_t vs1 = reg.regs[get_bits(ins, 19, 15)];
+    int32_t vs2 = reg.regs[get_bits(ins, 24, 20)];
+    int32_t vpc = reg.regs[PC];
+
+    int32_t arith_left = (opcode == Ops::JAL || opcode == Ops::BRANCH || opcode == Ops::AUIPC) ? vpc : (opcode == Ops::LUI ? 0 : vs1);
+    Funct3 arith_funct = (opcode == Ops::OP || opcode == Ops::IMM) ? funct3 : Funct3::ADD;
+ 
     int32_t imm;
     switch(opcode){
-        case ops::STORE:
+        case Ops::STORE:
             imm = imm_s;
             break;
 
@@ -65,24 +74,24 @@ bool step(Memory &mem, Regfile &reg){
             imm = imm_j;
             break;
 
-        case ops::BRANCH:
+        case Ops::BRANCH:
             imm = imm_b;
             break;
 
-        case ops::OP:
+        case Ops::OP:
             imm = vs2;
             break;
 
-        case ops::AUIPC:
-        case ops::LUI:
+        case Ops::AUIPC:
+        case Ops::LUI:
             imm = imm_u;
             break;
 
-        case ops::IMM:
-        case ops::LOAD:
-        case ops::JALR:
-        case ops::SYSTEM:
-        case ops::MISC:
+        case Ops::IMM:
+        case Ops::LOAD:
+        case Ops::JALR:
+        case Ops::SYSTEM:
+        case Ops::MISC:
             imm = imm_i;
             break;
             
@@ -91,16 +100,6 @@ bool step(Memory &mem, Regfile &reg){
     }
 
     
-
-
-    int32_t rd = get_bits(ins, 11, 7);
-
-    int32_t vs1 = reg.regs[get_bits(ins, 19, 15)];
-    int32_t vs2 = reg.regs[get_bits(ins, 24, 20)];
-    int32_t vpc = reg.regs[PC];
-
-    int32_t arith_left = (opcode == Ops::JAL || opcode == Ops::BRANCH || opcode == Ops.AUIPC) ? vpc : (opcode == Ops::LUI ? 0 : vs1);
-    Funct3 = (opcode == Ops::OP || opcode == Ops::IMM) ? funct3 : Funct3::ADD;
-    
-    
+    bool pending_new_pc = (opcode == Ops::JAL || opcode == Ops::JALR) || (opcode == Ops::BRANCH && conditional(funct3, vs1, vs2));
+    int32_t pending = arithmetics(arith_funct, arith_left, imm, alt);
 }
