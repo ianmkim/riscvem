@@ -1,8 +1,11 @@
 #include "memory.hpp"
 
+#include "utils.hpp"
+
 #include <stdexcept>
 #include <cstring>
 #include <stdint.h>
+#include <iostream>
 
 Memory::Memory(int size, int mem_offset=0x80000000){
     if(size <= 0)
@@ -16,6 +19,13 @@ Memory::Memory(int size, int mem_offset=0x80000000){
         throw std::runtime_error("Could not allocate enough memory for given size");
 
     std::memset(this->mem, (uint8_t)0x00, size);
+}
+
+
+void Memory::dump(uint32_t start, uint32_t end){
+    for(int i = start; i < end; i++) {
+        std::cout << HEX(i) << ": " << HEX8(this->mem[i]) << std::endl;
+    }
 }
 
 

@@ -1,8 +1,13 @@
 #include "cpu.hpp"
 
+#include <stdexcept>
+
 #include "memory.hpp"
 #include "registers.hpp"
 #include "utils.hpp"
+
+#include "conditionals.hpp"
+#include "arithmetics.hpp"
 
 #include "ops.hpp"
 #include "funct3.hpp"
@@ -28,8 +33,10 @@ bool needRegWriteback(Ops opcode){
 
 
 bool step(Memory &mem, Regfile &reg){
+    mem.dump(reg.regs[PC], reg.regs[PC] +2);
     int32_t ins = mem.readSegment(reg.regs[PC]);
     Ops opcode = (Ops)get_bits(ins, 6, 0);
+    std::cout << reg.regs[PC] << HEX(ins) << HEX( get_bits(ins, 6, 0) ) << std::endl;
 
     // a lot of this parsing is redundant, depending on the instruction
     // type, we will not need certain variables. However, overhead is small
@@ -96,10 +103,79 @@ bool step(Memory &mem, Regfile &reg){
             break;
             
         default:
-            throw std::runtime_error("Unknown OP code");
+            throw std::runtime_error(
+                    Formatter() << "Unknown OP code: " <<  opcode);
     }
 
     
     bool pending_new_pc = (opcode == Ops::JAL || opcode == Ops::JALR) || (opcode == Ops::BRANCH && conditional(funct3, vs1, vs2));
-    int32_t pending = arithmetics(arith_funct, arith_left, imm, alt);
+    int32_t pend = arithmetics(
+            arith_funct, 
+            arith_left, 
+            imm, 
+            isAltMode(funct7, funct3, opcode));
+
+
+    /* Handles system ops */
+    if(opcode == Ops::SYSTEM){
+        // I-Type instruction
+        if(funct3 == Funct3::ECALL){
+            std::cout << "Requested ECALL" << reg.regs[3] << std::endl;
+            if(reg.regs[3] > 1)
+                throw std::runtime_error("Test has failed");
+            else if(reg.regs[3] == 1)
+                return false;
+        }
+    }
+
+    
+    /* Handles load and store ops */
+    if(opcode == Ops::LOAD){
+        switch(funct3){
+            case Funct3::LB:
+                pend = sign_extend(mem.readSegment(pend) & 0xFF, 8);
+                break;
+            case Funct3::LH:
+                pend = sign_extend(mem.readSegment(pend) & 0xFFFF, 16); 
+                break;
+            case Funct3::LW:
+                pend = mem.readSegment(pend);
+                break;
+            case Funct3::LBU:
+                pend = mem.readSegment(pend) & 0xFF;
+                break;
+            case Funct3::LHU:
+                pend = mem.readSegment(pend) & 0xFFFF;
+                break;
+
+            default:
+                throw std::runtime_error("Unimplemented LOAD funct3");
+        }
+    }
+
+    else if(opcode == Ops::STORE){
+        uint8_t dat[4];
+        switch(funct3){
+            case Funct3::SB:
+                std::memcpy(dat, &vs2, 1);
+                mem.writeSegment(dat, 1, pend);
+                break;
+            case Funct3::SH:
+                std::memcpy(dat, &vs2, 2);
+                mem.writeSegment(dat, 2, pend);
+                break;
+            case Funct3::SW:
+                std::memcpy(dat, &vs2, 4);
+                mem.writeSegment(dat, 4, pend);
+            default:
+                throw std::runtime_error("Unimplemented STORE funct3");
+        }
+    }
+
+    if(needRegWriteback(opcode)){
+        reg.regs[rd] = pending_new_pc ?  vpc + 4 : pend;
+        reg.regs[PC] = pending_new_pc ?  pend : vpc + 4;
+    }
+
+    return true;
 }

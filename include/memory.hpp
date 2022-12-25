@@ -11,6 +11,8 @@ public:
 
     void writeSegment(const uint8_t* data, int datsize, int addr);
 
+    void dump(uint32_t start, uint32_t end);
+
     int readSegment(int addr);
 
     ~Memory();
