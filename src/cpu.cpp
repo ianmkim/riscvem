@@ -14,6 +14,7 @@
 #include "ops.hpp"
 #include "funct3.hpp"
 
+/* Local function header declarations */
 
 bool handleSyscall(Regfile &reg, Funct3 funct3);
 
@@ -27,17 +28,12 @@ bool isAltMode(uint32_t funct7, Funct3 funct3, Ops opcode);
 
 bool needRegWriteback(Ops opcode);
 
+bool run(ELFIO::elfio &reader);
 
+
+
+/* MAIN functions */
 bool run(std::string filename){
-    // allocate 64K memory starting at 0x80000000 address
-    // 64 bit memory addressing. No virtual memory
-    Memory mem(0x4000, 0x80000000);
-
-    // instantiates registers. Starts off as all zeros. 33
-    // 32 bit wide registers including program pointer at 
-    // index 32;
-    Regfile reg;
-
     // loads up an ELF artifact which includes the assembly
     // instructions in raw bytes.
     ELFIO::elfio reader;
@@ -45,34 +41,7 @@ bool run(std::string filename){
         std::cout << "Cannot find or process ELF file" << std::endl;
         return false;
     }
-    
-    ELFIO::Elf_Half sec_num = reader.sections.size();
-    std::cout << "Number of sections: " << sec_num << std::endl;
-    for(int i = 0; i < sec_num; i++){
-        const ELFIO::section* psec = reader.sections[i];
-        uint32_t int_addr = (uint32_t)psec->get_address();
-
-        if(int_addr != 0){
-            const uint8_t* p = (uint8_t*)reader.sections[i]->get_data();
-            mem.writeSegment(p, reader.sections[i]->get_size(), int_addr);
-
-            std::cout << "Wrote " << std::dec << reader.sections[i]->get_size() << " bytes to " << HEX(int_addr) << std::endl;
-        }
-    }
-
-    std::cout << PC << std::endl;
-
-    reg.regs[PC] = MEM_OFFSET;
-    int instruction_count = 0;
-    while(step(mem, reg)){
-        std::cout << std::dec << (int)instruction_count << " instructions ran" << std::endl;
-        instruction_count++;
-    }
-
-    std::cout << "TEST SUCCEDED" << std::endl;
-    std::cout << " ran " << instruction_count << " instructions" << std::endl;
-    
-    return true;
+    return run(reader);
 }
 
 bool step(Memory &mem, Regfile &reg){
@@ -147,6 +116,45 @@ bool step(Memory &mem, Regfile &reg){
 /***
  *  BEGINNING OF UTILITY FUNCTIONS
  ***/
+
+bool run(ELFIO::elfio &reader){
+    // allocate 64K memory starting at 0x80000000 address
+    // 64 bit memory addressing. No virtual memory
+    Memory mem(0x4000, 0x80000000);
+
+    // instantiates registers. Starts off as all zeros. 33
+    // 32 bit wide registers including program pointer at 
+    // index 32;
+    Regfile reg;
+
+    ELFIO::Elf_Half sec_num = reader.sections.size();
+    std::cout << "Number of sections: " << sec_num << std::endl;
+    for(int i = 0; i < sec_num; i++){
+        const ELFIO::section* psec = reader.sections[i];
+        uint32_t int_addr = (uint32_t)psec->get_address();
+
+        if(int_addr != 0){
+            const uint8_t* p = (uint8_t*)reader.sections[i]->get_data();
+            mem.writeSegment(p, reader.sections[i]->get_size(), int_addr);
+
+            std::cout << "Wrote " << std::dec << reader.sections[i]->get_size() << " bytes to " << HEX(int_addr) << std::endl;
+        }
+    }
+
+    std::cout << PC << std::endl;
+
+    reg.regs[PC] = MEM_OFFSET;
+    int instruction_count = 0;
+    while(step(mem, reg)){
+        std::cout << std::dec << (int)instruction_count << " instructions ran" << std::endl;
+        instruction_count++;
+    }
+
+    std::cout << "TEST SUCCEDED" << std::endl;
+    std::cout << " ran " << instruction_count << " instructions" << std::endl;
+    
+    return true;
+}
 
 bool handleSyscall(Regfile &reg, Funct3 funct3){
     // I-Type instruction
