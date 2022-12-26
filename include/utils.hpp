@@ -8,15 +8,18 @@
 #define HEX8( x ) "0x" << std::setw(2) << std::setfill('0') << std::hex << (int)( x ) << std::dec
 
 
-class Formatter
-{
+/*
+ * Formatter
+ * class that allows the use of formatting in exceptions. For ex: 
+ * throw std::runtime_error(Formatter() << "some message here" << 12);
+ */
+class Formatter {
 public:
     Formatter() {}
     ~Formatter() {}
 
     template <typename Type>
-    Formatter & operator << (const Type & value)
-    {
+    Formatter & operator << (const Type & value){
         stream_ << value;
         return *this;
     }
@@ -24,15 +27,13 @@ public:
     std::string str() const         { return stream_.str(); }
     operator std::string () const   { return stream_.str(); }
 
-    enum ConvertToString 
-    {
+    enum ConvertToString {
         to_str
     };
     std::string operator >> (ConvertToString) { return stream_.str(); }
 
 private:
     std::stringstream stream_;
-
     Formatter(const Formatter &);
     Formatter & operator = (Formatter &);
 };
