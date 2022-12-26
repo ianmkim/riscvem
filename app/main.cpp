@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include <elfio/elfio.hpp>
+#include <plog/Log.h>
+#include <plog/Initializers/ConsoleInitializer.h>
 
 #include "utils.hpp"
 #include "memory.hpp"
@@ -8,7 +10,6 @@
 #include "cpu.hpp"
 
 int main(int argc, char** argv){
-    run("../riscv-tests/isa/rv32ui-p-add");
-    run("../riscv-tests/isa/rv32ui-p-addi");
+    plog::init(plog::debug);
     return 0;
 }

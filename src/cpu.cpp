@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <elfio/elfio.hpp>
+#include <plog/Log.h>
 
 #include "memory.hpp"
 #include "registers.hpp"
@@ -38,20 +39,24 @@ bool run(std::string filename){
     // instructions in raw bytes.
     ELFIO::elfio reader;
     if(!reader.load(filename)){
-        std::cout << "Cannot find or process ELF file" << std::endl;
+        PLOGD << "Cannot find or process ELF file";
         return false;
     }
+    IF_PLOG(plog::debug)
+        std::cout << "Loaded: " << filename << std::endl;
     return run(reader);
 }
 
 bool step(Memory &mem, Regfile &reg){
     //mem.dumpAll();
-    mem.dump(reg.get(PC), reg.get(PC) + 10);
-    reg.dump();
+    IF_PLOG(plog::verbose){
+        mem.dump(reg.get(PC), reg.get(PC) + 10);
+        reg.dump();
+    }
 
     uint32_t ins = mem.readSegment(reg.get(PC));
     Ops opcode = (Ops)get_bits(ins, 6, 0);
-    std::cout << reg.get(PC) << " " << HEX(ins) << " " << HEX( get_bits(ins, 6, 0) ) << std::endl;
+    PLOGD << "PC: " <<  HEX(reg.get(PC)) << " | ins: " << HEX(ins) << " | opcode: " << HEX( get_bits(ins, 6, 0) );
 
     // a lot of this parsing is redundant, depending on the instruction
     // type, we will not need certain variables. However, overhead is small
@@ -128,7 +133,10 @@ bool run(ELFIO::elfio &reader){
     Regfile reg;
 
     ELFIO::Elf_Half sec_num = reader.sections.size();
-    std::cout << "Number of sections: " << sec_num << std::endl;
+    IF_PLOG(plog::debug){
+        std::cout << "Number of sections loaded: " << sec_num << std::endl;
+    }
+
     for(int i = 0; i < sec_num; i++){
         const ELFIO::section* psec = reader.sections[i];
         uint32_t int_addr = (uint32_t)psec->get_address();
@@ -137,21 +145,24 @@ bool run(ELFIO::elfio &reader){
             const uint8_t* p = (uint8_t*)reader.sections[i]->get_data();
             mem.writeSegment(p, reader.sections[i]->get_size(), int_addr);
 
-            std::cout << "Wrote " << std::dec << reader.sections[i]->get_size() << " bytes to " << HEX(int_addr) << std::endl;
+            IF_PLOG(plog::debug){
+                std::cout << "Wrote " 
+                    << std::dec << reader.sections[i]->get_size() 
+                    << " bytes to " << HEX(int_addr) << std::endl;
+            }
         }
     }
-
-    std::cout << PC << std::endl;
 
     reg.regs[PC] = MEM_OFFSET;
     int instruction_count = 0;
     while(step(mem, reg)){
-        std::cout << std::dec << (int)instruction_count << " instructions ran" << std::endl;
         instruction_count++;
     }
 
-    std::cout << "TEST SUCCEDED" << std::endl;
-    std::cout << " ran " << instruction_count << " instructions" << std::endl;
+    IF_PLOG(plog::debug){ 
+        std::cout << "TEST SUCCEDED" << std::endl;
+        std::cout << " ran " << instruction_count << " instructions" << std::endl << std::endl;
+    }
     
     return true;
 }
@@ -160,7 +171,7 @@ bool handleSyscall(Regfile &reg, Funct3 funct3){
     // I-Type instruction
     if(funct3 == Funct3::ECALL){
         uint32_t gp_reg = reg.get(3);
-        std::cout << "Requested ECALL " <<  HEX(gp_reg) << std::endl;
+        PLOGD << "Requested ECALL " <<  HEX(gp_reg);
         if(gp_reg > 1)
             throw std::runtime_error("Test has failed");
         else if(gp_reg == 1)
