@@ -1,0 +1,10 @@
+{
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make"
+        } 
+    ],
+    "version": "2.0.0"
+}
