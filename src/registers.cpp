@@ -33,6 +33,11 @@ void Regfile::dump(){
 }
 
 
+void Regfile::reset(){
+    std::memset(this->regs, 0, 33 * sizeof(int));
+}
+
+
 Regfile::~Regfile(){
     if(this->regs != nullptr)
         free(this->regs);

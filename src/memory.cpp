@@ -22,15 +22,27 @@ Memory::Memory(int size, int mem_offset=0x80000000){
 }
 
 
+void Memory::dumpAll(){
+    for(int i = 0; i < this->mem_size; i++){
+        std::cout << HEX(i) << ": " << HEX8(this->mem[i]) << std::endl;
+    }
+}
+
 void Memory::dump(uint32_t start, uint32_t end){
-    for(int i = start; i < end; i++) {
+    for(uint32_t i = start - this->mem_offset; i < end - this->mem_offset; i++) {
         std::cout << HEX(i) << ": " << HEX8(this->mem[i]) << std::endl;
     }
 }
 
 
-void Memory::writeSegment(const uint8_t* data, int datsize, int addr){
+void Memory::reset(){
+    std::memset(this->mem, 0, this->mem_size);
+}
+
+
+void Memory::writeSegment(const uint8_t* data, uint32_t datsize, uint32_t addr){
     addr -= this->mem_offset;
+    std::cout << "WRITING TO: " << addr << std::endl;
     if(addr < 0 || addr >= this->mem_size)
         throw std::runtime_error("Tried to access an illegal memory address");
     if(addr + datsize >= this->mem_size)
@@ -39,12 +51,12 @@ void Memory::writeSegment(const uint8_t* data, int datsize, int addr){
 }
 
 
-int Memory::readSegment(int addr){
+int32_t Memory::readSegment(uint32_t addr){
     addr -= this->mem_offset;
     if(addr < 0 || addr >= this->mem_size)
         throw std::runtime_error("Tried to access an illegal memory address");
-    int val;
-    memcpy(&val, &this->mem[addr], 4);
+    int32_t val = 0;
+    std::memcpy(&val, &this->mem[addr], 4);
     return val;
 }
 

@@ -12,6 +12,8 @@ public:
     Regfile();
 
     void dump();
+
+    void reset();
     
     ~Regfile();
 };

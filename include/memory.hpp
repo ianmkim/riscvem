@@ -9,18 +9,22 @@ class Memory{
 public:
     Memory(int size, int mem_offset);
 
-    void writeSegment(const uint8_t* data, int datsize, int addr);
+    void writeSegment(const uint8_t* data, uint32_t datsize, uint32_t addr);
+
+    void dumpAll();
 
     void dump(uint32_t start, uint32_t end);
 
-    int readSegment(int addr);
+    void reset();
+
+    int32_t readSegment(uint32_t addr);
 
     ~Memory();
 
 private:
     uint8_t* mem;
-    int mem_offset;
-    int mem_size;
+    uint32_t mem_offset;
+    uint32_t mem_size;
 };
 
 #endif

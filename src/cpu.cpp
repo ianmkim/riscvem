@@ -20,23 +20,24 @@ bool isAltMode(int32_t funct7, Funct3 funct3, Ops opcode){
 }
 
 bool needRegWriteback(Ops opcode){
-    return (
-        opcode == Ops::JAL   ||
+    return opcode == Ops::JAL   ||
         opcode == Ops::JALR  ||
         opcode == Ops::AUIPC ||
         opcode == Ops::LUI   ||
         opcode == Ops::OP    ||
         opcode == Ops::IMM   ||
-        opcode == Ops::LOAD
-    );
+        opcode == Ops::LOAD;
 }
 
 
 bool step(Memory &mem, Regfile &reg){
-    mem.dump(reg.regs[PC], reg.regs[PC] +2);
+    //mem.dumpAll();
+    mem.dump(reg.regs[PC], reg.regs[PC] + 10);
+    reg.dump();
+
     int32_t ins = mem.readSegment(reg.regs[PC]);
     Ops opcode = (Ops)get_bits(ins, 6, 0);
-    std::cout << reg.regs[PC] << HEX(ins) << HEX( get_bits(ins, 6, 0) ) << std::endl;
+    std::cout << reg.regs[PC] << " " << HEX(ins) << " " << HEX( get_bits(ins, 6, 0) ) << std::endl;
 
     // a lot of this parsing is redundant, depending on the instruction
     // type, we will not need certain variables. However, overhead is small
@@ -120,7 +121,7 @@ bool step(Memory &mem, Regfile &reg){
     if(opcode == Ops::SYSTEM){
         // I-Type instruction
         if(funct3 == Funct3::ECALL){
-            std::cout << "Requested ECALL" << reg.regs[3] << std::endl;
+            std::cout << "Requested ECALL " <<  HEX(reg.regs[3]) << std::endl;
             if(reg.regs[3] > 1)
                 throw std::runtime_error("Test has failed");
             else if(reg.regs[3] == 1)
@@ -172,9 +173,22 @@ bool step(Memory &mem, Regfile &reg){
         }
     }
 
+    /*
     if(needRegWriteback(opcode)){
+        std::cout << "writeback to register" << std::endl;
         reg.regs[rd] = pending_new_pc ?  vpc + 4 : pend;
         reg.regs[PC] = pending_new_pc ?  pend : vpc + 4;
+    }
+    */
+
+    if(pending_new_pc){
+        if(needRegWriteback(opcode))
+            reg.regs[rd] = vpc + 4;
+        reg.regs[PC] = pend;
+    } else{
+        if(needRegWriteback(opcode))
+            reg.regs[rd] = pend;
+        reg.regs[PC] = vpc + 4;
     }
 
     return true;
