@@ -5,7 +5,7 @@ set(
   main.cpp
 )
 
-set(TEST_MAIN unit_tests)
+set(TEST_MAIN rv32ui_tests)
 set(TEST_RUNNER_PARAMS "")
 
 add_executable(${TEST_MAIN} ${TESTFILES})
