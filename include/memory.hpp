@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-#define MEM_OFFSET 0x80000000
+const uint32_t MEM_OFFSET = 0x80000000;
+const int PC = 32;
 
 class Memory{
 public:

@@ -42,7 +42,6 @@ void Memory::reset(){
 
 void Memory::writeSegment(const uint8_t* data, uint32_t datsize, uint32_t addr){
     addr -= this->mem_offset;
-    std::cout << "WRITING TO: " << addr << std::endl;
     if(addr < 0 || addr >= this->mem_size)
         throw std::runtime_error("Tried to access an illegal memory address");
     if(addr + datsize >= this->mem_size)

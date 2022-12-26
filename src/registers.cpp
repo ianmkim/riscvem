@@ -8,7 +8,7 @@
 #include <stdexcept>
 
 Regfile::Regfile(){
-    this->regs = (int*)malloc(33 * sizeof(int));
+    this->regs = (uint32_t*)malloc(33 * sizeof(uint32_t));
     if(this->regs == nullptr){
         throw std::runtime_error("Could not allocate enough memory for registers");
     } std::memset(this->regs, 0, 33 * sizeof(int));
@@ -34,7 +34,7 @@ void Regfile::dump(){
 
 
 void Regfile::reset(){
-    std::memset(this->regs, 0, 33 * sizeof(int));
+    std::memset(this->regs, 0x00, 33 * sizeof(uint32_t));
 }
 
 

@@ -6,7 +6,7 @@
 
 class Regfile{
 public:
-    int* regs;
+    uint32_t* regs;
     std::vector<std::string> regnames;
 
     Regfile();
