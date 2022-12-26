@@ -13,7 +13,7 @@
  * @return a binary string that has the length of l that has the same sign and
  * value as x parameter
  */
-int32_t sign_extend(int32_t x, int l){
+uint32_t sign_extend(uint32_t x, int l){
     if(x >> (l - 1) == 1)
         return -((1 << l) - x);
     return x;
@@ -32,6 +32,6 @@ int32_t sign_extend(int32_t x, int l){
  * 
  * @return integer representation of the bits
  */
-int32_t get_bits(int32_t ins, int s, int e){
+uint32_t get_bits(uint32_t ins, uint32_t s, uint32_t e){
     return (ins >> e) & ((1 << (s - e + 1)) - 1);
 }

@@ -22,11 +22,21 @@ Regfile::Regfile(){
     regnames.assign(names.begin(), names.end());
 }
 
+uint32_t Regfile::get(uint32_t indx){
+    if(indx < 0 || indx >= 33) return 0;
+    return this->regs[indx];
+}
+
+void Regfile::set(uint32_t indx, uint32_t val){
+    if(indx == 0 || indx >= 33){
+        return;
+    } this->regs[indx] = val;
+}
 
 void Regfile::dump(){
     std::cout << "REGISTER DUMP: " << std::endl;
     for(int i = 0; i < 33; i++){
-        if(i != 0 && i % 8 == 0){
+        if(i != 0 && i % 4 == 0){
             std::cout << std::endl;
         } std::cout << "\t" << this->regnames[i] << ": " << HEX(this->regs[i]);
     } std::cout << std::endl;

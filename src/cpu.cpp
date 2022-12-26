@@ -13,7 +13,7 @@
 #include "funct3.hpp"
 
 
-bool isAltMode(int32_t funct7, Funct3 funct3, Ops opcode){
+bool isAltMode(uint32_t funct7, Funct3 funct3, Ops opcode){
     return (funct7 == 0b0100000) 
         && (opcode == Ops::OP || 
             (opcode == Ops::IMM && funct3 == Funct3::SRAI));
@@ -32,12 +32,12 @@ bool needRegWriteback(Ops opcode){
 
 bool step(Memory &mem, Regfile &reg){
     //mem.dumpAll();
-    mem.dump(reg.regs[PC], reg.regs[PC] + 10);
+    mem.dump(reg.get(PC), reg.get(PC) + 10);
     reg.dump();
 
-    int32_t ins = mem.readSegment(reg.regs[PC]);
+    uint32_t ins = mem.readSegment(reg.get(PC));
     Ops opcode = (Ops)get_bits(ins, 6, 0);
-    std::cout << reg.regs[PC] << " " << HEX(ins) << " " << HEX( get_bits(ins, 6, 0) ) << std::endl;
+    std::cout << reg.get(PC) << " " << HEX(ins) << " " << HEX( get_bits(ins, 6, 0) ) << std::endl;
 
     // a lot of this parsing is redundant, depending on the instruction
     // type, we will not need certain variables. However, overhead is small
@@ -47,29 +47,31 @@ bool step(Memory &mem, Regfile &reg){
     Funct3 funct3 = (Funct3)get_bits(ins, 14, 12);
 
     // load funct7
-    int32_t funct7 = get_bits(ins, 31, 25);
+    uint32_t funct7 = get_bits(ins, 31, 25);
 
     // load the immediate values
-    int32_t imm_i = sign_extend(get_bits(ins, 31, 20), 12); 
-    int32_t imm_s = sign_extend((get_bits(ins, 31, 25) << 5)  | 
+    uint32_t imm_i = sign_extend(get_bits(ins, 31, 20), 12); 
+    uint32_t imm_s = sign_extend((get_bits(ins, 31, 25) << 5)  | 
                     get_bits(ins, 11, 7), 12);
-    int32_t imm_b = sign_extend((get_bits(ins, 32, 31) << 12) | 
+    uint32_t imm_b = sign_extend((get_bits(ins, 32, 31) << 12) | 
                         (get_bits(ins, 30, 25) << 5)  |
                         (get_bits(ins, 11, 8)  << 1)  |
                         (get_bits(ins, 8, 7)   << 11), 13);
-    int32_t imm_u = sign_extend(get_bits(ins, 31, 12) << 12, 32);
-    int32_t imm_j = sign_extend((get_bits(ins, 32, 31) << 20) |
+    uint32_t imm_u = sign_extend(get_bits(ins, 31, 12) << 12, 32);
+    uint32_t imm_j = sign_extend((get_bits(ins, 32, 31) << 20) |
                         (get_bits(ins, 30, 21) << 1)  |
                         (get_bits(ins, 21, 20) << 11) |
                         (get_bits(ins, 19, 12) << 12), 21);
 
-    int32_t rd = get_bits(ins, 11, 7);
+    uint32_t rd = get_bits(ins, 11, 7);
 
-    int32_t vs1 = reg.regs[get_bits(ins, 19, 15)];
-    int32_t vs2 = reg.regs[get_bits(ins, 24, 20)];
-    int32_t vpc = reg.regs[PC];
+    uint32_t vs1 = reg.get(get_bits(ins, 19, 15));
+    uint32_t vs2 = reg.get(get_bits(ins, 24, 20));
+    uint32_t vpc = reg.get(PC);
 
-    int32_t arith_left = (opcode == Ops::JAL || opcode == Ops::BRANCH || opcode == Ops::AUIPC) ? vpc : (opcode == Ops::LUI ? 0 : vs1);
+    uint32_t arith_left = (opcode == Ops::JAL || 
+                            opcode == Ops::BRANCH || 
+                            opcode == Ops::AUIPC) ? vpc : (opcode == Ops::LUI ? 0 : vs1);
     Funct3 arith_funct = (opcode == Ops::OP || opcode == Ops::IMM) ? funct3 : Funct3::ADD;
  
     int32_t imm;
@@ -110,7 +112,7 @@ bool step(Memory &mem, Regfile &reg){
 
     
     bool pending_new_pc = (opcode == Ops::JAL || opcode == Ops::JALR) || (opcode == Ops::BRANCH && conditional(funct3, vs1, vs2));
-    int32_t pend = arithmetics(
+    uint32_t pend = arithmetics(
             arith_funct, 
             arith_left, 
             imm, 
@@ -121,10 +123,11 @@ bool step(Memory &mem, Regfile &reg){
     if(opcode == Ops::SYSTEM){
         // I-Type instruction
         if(funct3 == Funct3::ECALL){
-            std::cout << "Requested ECALL " <<  HEX(reg.regs[3]) << std::endl;
-            if(reg.regs[3] > 1)
+            uint32_t gp_reg = reg.get(3);
+            std::cout << "Requested ECALL " <<  HEX(gp_reg) << std::endl;
+            if(gp_reg > 1)
                 throw std::runtime_error("Test has failed");
-            else if(reg.regs[3] == 1)
+            else if(gp_reg == 1)
                 return false;
         }
     }
@@ -181,14 +184,15 @@ bool step(Memory &mem, Regfile &reg){
     }
     */
 
+    bool need_write = needRegWriteback(opcode);
     if(pending_new_pc){
-        if(needRegWriteback(opcode))
-            reg.regs[rd] = vpc + 4;
-        reg.regs[PC] = pend;
+        if(need_write)
+            reg.set(rd, vpc + 4);
+        reg.set(PC, pend);
     } else{
-        if(needRegWriteback(opcode))
-            reg.regs[rd] = pend;
-        reg.regs[PC] = vpc + 4;
+        if(need_write)
+            reg.set(rd, pend);
+        reg.set(PC, vpc + 4);
     }
 
     return true;

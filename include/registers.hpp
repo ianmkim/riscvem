@@ -14,6 +14,10 @@ public:
     void dump();
 
     void reset();
+
+    void set(uint32_t indx, uint32_t val);
+
+    uint32_t get(uint32_t indx);
     
     ~Regfile();
 };
