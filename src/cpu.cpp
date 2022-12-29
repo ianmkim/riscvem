@@ -17,18 +17,88 @@
 
 /* Local function header declarations */
 
+/*
+ * handleSyscall
+ * handles all instructions that have to do with making syscalls
+ * 
+ * @param reg reference to the register file
+ * @param funct3 the Funct3 type
+ * 
+ * @return success conditions
+ */
 bool handleSyscall(Regfile &reg, Funct3 funct3);
 
+
+/*
+ * handleMemStore
+ * handles all instructions that have to do with writing data to the memory
+ *
+ * @param mem a reference to the memory object
+ * @param funct3 the type of funct3 
+ * @param pend
+ * @param vs2
+ */
 void handleMemStore(Memory& mem, Funct3 funct3, uint32_t pend, uint32_t vs2);
    
-uint32_t handleMemRead(Memory &mem, Funct3 funct3);
 
+/*
+ * handleMemRead
+ * handles all instructions that have to do with reading data from the memory
+ * 
+ * @param mem a reference to the memory object
+ * @param funct3 the type of funct3
+ * @param pend
+ *
+ * @return a 32 bit wide segment of the memory in a specified positio
+ */
+uint32_t handleMemRead(Memory &mem, Funct3 funct3, uint32_t pend);
+
+
+/*
+ * parseImm
+ * Parse the instruction data into all possible imm values and return the
+ * appropriate immediate value type depending on the opcode. The function will
+ * also parse the opcode from the instructions in order to determine which
+ * imm values to return
+ *
+ * @param ins a 32 bit wide piece of data signifying an instruction
+ * @return a 32 bit wide piece of data that holds the immediate value
+ */
 uint32_t parseImm(uint32_t ins);
 
+/*
+ * isAltMode
+ * determine whether the arithmetics should be performed in the normal or
+ * alternative mode.
+ *
+ * @param funct7 32 bit wide value signifying the funct7 type
+ * @param funct3 signifies the funct3 type
+ * @param opcode the opcode
+ *
+ * @return true or false for opmode
+ */
 bool isAltMode(uint32_t funct7, Funct3 funct3, Ops opcode);
 
+
+/*
+ * needRegwriteback
+ * determines what kind of register writeback we need
+ * 
+ * @param opcode
+ *
+ * @return bool
+ */
 bool needRegWriteback(Ops opcode);
 
+
+/*
+ * run
+ * takes in a reference to the ELFIO reader object and steps through each
+ * instructions until end of section, or finish register is set.
+ *
+ * @param reader ELFIO reader that MUST not be empty
+ * @return bool success or failure test condition
+ */
 bool run(ELFIO::elfio &reader);
 
 
@@ -80,13 +150,14 @@ bool step(Memory &mem, Regfile &reg){
     // load the appropriate immediate value depending on the opcode
     int32_t imm = (opcode == Ops::OP) ? vs2 : parseImm(ins);
     
-    bool pending_new_pc = (opcode == Ops::JAL || opcode == Ops::JALR) || (opcode == Ops::BRANCH && conditional(funct3, vs1, vs2));
+    bool pending_new_pc = (opcode == Ops::JAL || opcode == Ops::JALR) || 
+                            (opcode == Ops::BRANCH && conditional(funct3, vs1, vs2));
+    
     uint32_t pend = arithmetics(
             arith_funct, 
             arith_left, 
             imm, 
             isAltMode(funct7, funct3, opcode));
-
 
     /* Handles system ops */
     if(opcode == Ops::SYSTEM){
@@ -96,7 +167,7 @@ bool step(Memory &mem, Regfile &reg){
     
     /* Handles load and store ops */
     if(opcode == Ops::LOAD){
-        pend = handleMemRead(mem, funct3);
+        pend = handleMemRead(mem, funct3, pend);
     }
 
     else if(opcode == Ops::STORE){
@@ -199,8 +270,7 @@ void handleMemStore(Memory& mem, Funct3 funct3, uint32_t pend, uint32_t vs2){
     }
 }
 
-uint32_t handleMemRead(Memory &mem, Funct3 funct3){
-    uint32_t pend;
+uint32_t handleMemRead(Memory &mem, Funct3 funct3, uint32_t pend){
     switch(funct3){
         case Funct3::LB:
             pend = sign_extend(mem.readSegment(pend) & 0xFF, 8);
