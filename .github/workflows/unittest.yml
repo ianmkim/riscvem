@@ -1,5 +1,4 @@
 name: Run C/C++ tests
-description: Run tests, check for memory leaks, report code coverage
 
 on:
   push:
