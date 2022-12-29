@@ -1,9 +1,6 @@
 name: Run C/C++ tests
 
-on:
-  push:
-    branches :
-      - "master"
+on: push
 
 inputs:
   source-path:
